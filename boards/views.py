@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
 from .models import Board
 from .forms import BoardForm
 
@@ -7,7 +8,8 @@ def index(request):
     boards = Board.objects.order_by('-pk')
     context = {'boards':boards}
     return render(request, 'boards/index.html', context)
-    
+
+@login_required
 def create(request):
     # post 요청이면 form데이터를 처리한다.
     if request.method == "POST":
@@ -42,7 +44,8 @@ def delete(request, board_pk):
         return redirect('boards:index')
     else:
         return redirect('boards:detail', board.pk)
-        
+
+@login_required
 def update(request, board_pk):
     board = get_object_or_404(Board, pk=board_pk)
     if request.method == "POST":
