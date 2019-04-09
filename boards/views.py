@@ -18,7 +18,9 @@ def create(request):
         # form 유효성 체크
         if form.is_valid():
         # cleaned_data : 유효성검증을 위한 것.
-            board = form.save()
+            board = form.save(commit=False) # board를 바로 저장하지 않는다는 것.
+            board.user = request.user
+            board.save()
             return redirect('boards:detail', board.pk)
             # title = form.cleaned_data.get('title')
             # content = form.cleaned_data.get('content')
@@ -39,28 +41,34 @@ def detail(request, board_pk):
     
 def delete(request, board_pk):
     board = get_object_or_404(Board, pk=board_pk)
-    if request.method == "POST":
-        board.delete()
-        return redirect('boards:index')
+    if board.user == request.user:
+        if request.method == "POST":
+            board.delete()
+            return redirect('boards:index')
+        else:
+            return redirect('boards:detail', board.pk)
     else:
-        return redirect('boards:detail', board.pk)
+        return redirect('boards:index')
 
 @login_required
 def update(request, board_pk):
     board = get_object_or_404(Board, pk=board_pk)
-    if request.method == "POST":
-        form = BoardForm(request.POST, instance=board)
-        if form.is_valid():
-            board = form.save()
-            return redirect('boards:detail', board.pk)
-    # get 요청이면(혹은 수정하기 버튼을 눌렀을 떄)
+    if board.user == request.user:
+        if request.method == "POST":
+            form = BoardForm(request.POST, instance=board)
+            if form.is_valid():
+                board = form.save()
+                return redirect('boards:detail', board.pk)
+        # get 요청이면(혹은 수정하기 버튼을 눌렀을 떄)
+        else:
+            
+            # 원래는 이렇게 써야 함
+            # form = BoardForm(initial={'title' : board.title, 'content':board.content})
+            # boardForm을 초기화(사용자 입력 값을 넣어준 상태로)
+            # form 
+            form = BoardForm(instance=board)
     else:
-        
-        # 원래는 이렇게 써야 함
-        # form = BoardForm(initial={'title' : board.title, 'content':board.content})
-        # boardForm을 초기화(사용자 입력 값을 넣어준 상태로)
-        # form 
-        form = BoardForm(instance=board)
+        return redirect('boards:index')
     context = {'form' : form, 'board':board}
     # POST :  요청에서 검증에 실패하였을때, 오류메시지가 포함된 상태
     # GET : 요청에서 초기화 된 상태.
