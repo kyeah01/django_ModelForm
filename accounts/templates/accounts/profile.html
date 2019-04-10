@@ -1,0 +1,42 @@
+{% extends 'boards/base.html' %}
+{% load gravatar %}
+{% block body %}
+    <h1><img src="https://s.gravatar.com/avatar/{{ nowuser.email | makemd5 }}?s=80" alt="profile image">{{ nowuser.username }}의 프로필</h1>
+    
+    <!--계정상태 변화-->
+    {% if user == nowuser %}
+        <a href="{% url 'accounts:edit' %}">정보수정</a>
+        <a href="{% url 'accounts:change_password' %}">비밀번호변경</a>
+        <form action="{% url 'accounts:delete' %}" method="POST" style="display:inline" onsubmit="return confirm('R U sure?');">
+            {% csrf_token %}
+            <input type="submit" value="탈퇴"/>
+        </form>
+    {% endif %}
+    
+    
+    <!--작성 글 목록-->
+    <h3>작성 글</h3>
+    {% for txt in nowuser.board_set.all %}
+        <hr>
+        <div>제목 : <a href="{% url 'boards:detail' txt.pk %}">{{ txt.title }}</a><br>
+        내용 : {{ txt.content }}<br>
+        {{ txt.comment_set.all | length }}개의 댓글이 달렸습니다.
+        </div>
+    {% empty %}
+        <p>작성한 글이 없습니다.</p>
+    {% endfor %}
+    <br>
+    
+    
+    <!--작성 댓글 목록-->
+    <h3>작성 댓글</h3>
+    {% for comment in nowuser.comment_set.all %}
+    <hr>
+        <div>
+            댓글내용 : {{ comment.content }}
+            글 : <a href="{% url 'boards:detail' comment.board_id %}">{{ comment.board }}</a>
+        </div>
+    {% empty %}
+        <p>작성한 댓글이 없습니다.</p>
+    {% endfor %}
+{% endblock %}

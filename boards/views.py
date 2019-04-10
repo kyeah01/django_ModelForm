@@ -1,11 +1,13 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, get_list_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Board
-from .forms import BoardForm
+from django.contrib.auth.models import User
+from django.views.decorators.http import require_POST
+from .models import Board, Comment
+from .forms import BoardForm, CommentForm
 
 # Create your views here.
 def index(request):
-    boards = Board.objects.order_by('-pk')
+    boards = get_list_or_404(Board.objects.order_by('-pk'))
     context = {'boards':boards}
     return render(request, 'boards/index.html', context)
 
@@ -36,7 +38,11 @@ def create(request):
 def detail(request, board_pk):
     # board = Board.objects.get(pk=board_pk)
     board = get_object_or_404(Board, pk=board_pk)
-    context = {'board':board}
+    comment_form = CommentForm()
+    context = {
+        'board':board,
+        'comment_form':comment_form
+    }
     return render(request, 'boards/detail.html', context)
     
 def delete(request, board_pk):
@@ -73,3 +79,25 @@ def update(request, board_pk):
     # POST :  요청에서 검증에 실패하였을때, 오류메시지가 포함된 상태
     # GET : 요청에서 초기화 된 상태.
     return render(request, 'boards/form.html', context)
+    
+@login_required
+@require_POST
+def comment_create(request, board_pk):
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.board_id = board_pk
+        comment.user = request.user
+        comment.save()
+    return redirect('boards:detail', board_pk)
+    
+@login_required
+@require_POST
+def comment_delete(request, comment_pk):
+    comment = get_object_or_404(Comment, pk=comment_pk)
+    if request.user == comment.user:
+        comment.delete()
+        return redirect('boards:detail', comment.board.pk)
+    else:
+        return redirect('boards:detail', comment.board.pk)
+    return redirect('boards:detail', comment.board.pk)
