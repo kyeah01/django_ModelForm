@@ -1,42 +1,83 @@
-{% extends 'boards/base.html' %}
-{% load gravatar %}
+{% extends 'accounts/base.html' %}
 {% block body %}
-    <h1><img src="https://s.gravatar.com/avatar/{{ nowuser.email | makemd5 }}?s=80" alt="profile image">{{ nowuser.username }}의 프로필</h1>
+{% load gravatar %}
+{% load static %}
+<!--<h1 class="mt-5" style="display:inline;">-->
+<div class="row mt-5">
     
-    <!--계정상태 변화-->
-    {% if user == nowuser %}
-        <a href="{% url 'accounts:edit' %}">정보수정</a>
-        <a href="{% url 'accounts:change_password' %}">비밀번호변경</a>
+<h1 class="col-6">
+    <img class="rounded-circle" src="https://s.gravatar.com/avatar/{{ nowuser.email | makemd5 }}?s=80" alt="profile image"> {{ nowuser.username | title }}'s Profile
+</h1>
+
+<!--계정상태 변화-->
+</div>
+    
+{% if user == nowuser %}
+<div class="row">
+    <div class="ml-auto">
+        <a href="{% url 'accounts:edit' %}"><button type="button" class="btn btn-outline-success">정보수정</button></a>
+        <a href="{% url 'accounts:change_password' %}"><button type="button" class="btn btn-outline-primary">비밀번호변경</button></a>
         <form action="{% url 'accounts:delete' %}" method="POST" style="display:inline" onsubmit="return confirm('R U sure?');">
             {% csrf_token %}
-            <input type="submit" value="탈퇴"/>
+            <button type="submit" class="btn btn-outline-danger">탈퇴</button>
         </form>
-    {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="container box">
     
-    
-    <!--작성 글 목록-->
-    <h3>작성 글</h3>
-    {% for txt in nowuser.board_set.all %}
-        <hr>
-        <div>제목 : <a href="{% url 'boards:detail' txt.pk %}">{{ txt.title }}</a><br>
-        내용 : {{ txt.content }}<br>
-        {{ txt.comment_set.all | length }}개의 댓글이 달렸습니다.
-        </div>
-    {% empty %}
-        <p>작성한 글이 없습니다.</p>
-    {% endfor %}
-    <br>
-    
-    
-    <!--작성 댓글 목록-->
-    <h3>작성 댓글</h3>
-    {% for comment in nowuser.comment_set.all %}
-    <hr>
-        <div>
-            댓글내용 : {{ comment.content }}
-            글 : <a href="{% url 'boards:detail' comment.board_id %}">{{ comment.board }}</a>
-        </div>
-    {% empty %}
-        <p>작성한 댓글이 없습니다.</p>
-    {% endfor %}
+<!--작성 글 목록-->
+<h3>작성 글</h3>
+{% for txt in nowuser.board_set.all %}
+
+<div class="accordion" id="accordion{{ txt.pk }}">
+  <div class="card">
+    <div class="card-header" id="headingOne">
+      <h2 class="mb-0">
+        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{ txt.pk }}" aria-expanded="true" aria-controls="collapseOne">
+          {{ txt.title }}
+        </button>
+      </h2>
+    </div>
+
+    <div id="collapse{{ txt.pk }}" class="collapse" aria-labelledby="headingOne" data-parent="#accordion{{ txt.pk }}">
+      <div class="card-body">
+            {{ txt.content }}<br><br>
+            {{ txt.comment_set.all.count }}개의 댓글이 달렸습니다.<br>
+            <a href="{% url 'boards:detail' txt.pk %}">게시글로 이동하기</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% empty %}
+<p>작성한 글이 없습니다.</p>
+{% endfor %}
+<br>
+
+
+<!--작성 댓글 목록-->
+<h4>작성 댓글</h4>
+{% for comment in nowuser.comment_set.all %}
+<hr>
+<div class="media">
+  <!--<img src="..." class="mr-3" alt="...">-->
+  <div class="media-body">
+    <p class="mt-0"><a href="{% url 'boards:detail' comment.board_id %}">{{ comment.board }}</a></p>
+    <div class="media mt-3">
+      <p class="ml-4" href="#">
+        <img src="{% static 'arrow.png' %}" class="mr-3" alt="댓글 화살표" style="width:20px; height:20px;">
+      </p>
+      <div class="media-body">
+        <h5 class="mt-0">{{ comment.content }}</h5>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% empty %}
+<p>작성한 댓글이 없습니다.</p>
+{% endfor %}
+</div>
 {% endblock %}
